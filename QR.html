@@ -1151,6 +1151,20 @@
         opcionesGrid.appendChild(cardPresencial);
       }
       
+      /** Solo este DNI usa extraFields "incompleto"; 29328704 y el resto usan el bloque completo (Terminado + Drive, etc.). */
+      const DNI_EXTRAFIELDS_SEGURO_VIDA_INCOMPLETO = '87654321';
+      
+      function dniSoloDigitos(valor) {
+        return String(valor == null ? '' : valor).replace(/\D/g, '');
+      }
+      
+      /** DNI efectivo para ramas de extrafields: input del formulario (fuente de verdad) o variable en memoria. */
+      function obtenerDniDigitosParaEnqueue() {
+        const inputEl = document.getElementById('inputDni');
+        const desdeInput = inputEl && typeof inputEl.value === 'string' ? inputEl.value : '';
+        return dniSoloDigitos(desdeInput || formDni);
+      }
+      
       function construirCuerpoEnqueue() {
         const datos = {
           firstName: formNombre,
@@ -1163,17 +1177,33 @@
           return datos;
         }
         const consultaNombreApellidos = `${formNombre} ${formApellido}`.trim() || '—';
-        datos.extraFields = [
-          {
-            showable: [{ in: 'workstation', format: 'both' }],
-            Consulta: consultaNombreApellidos,
-            Trámite: 'Seguro de vida',
-            'Onboarding digital': 'Terminado',
-            'Ofertas personalizadas': 'Ofrecer seguro de auto con cobertura amplia por ser un cliente preferencial',
-            'Datos de usuario': '<table><tr><td>Nombre: Barlaam Eduardo</td></tr><tr><td>Apellidos: Corona Becerra</td></tr><tr><td>CURP: COBB950601HDFRCR03</td></tr><tr><td>Edad: 30</td></tr><tr><td>Sexo: H</td></tr><tr><td>Nivel de riesgo: Medio</td></tr><tr><td>Ubicación: Ciudad de México</td></tr><tr><td>Enfermedades: No</td></tr></table>',
-            Documentación: '<a href=\'https://drive.google.com/file/d/1SAbrxj3WmJX7FCUhn2ZTVe0zRHoPvt8K/view?usp=drive_link\' target=\'_blank\' rel=\'noopener noreferrer\'>Ver Comprobante de Domicilio</a>'
-          }
-        ];
+        const tramiteEtiqueta = 'Seguro de vida';
+        const dniDig = obtenerDniDigitosParaEnqueue();
+        if (dniDig === DNI_EXTRAFIELDS_SEGURO_VIDA_INCOMPLETO) {
+          datos.extraFields = [
+            {
+              showable: [{ in: 'workstation', format: 'both' }],
+              Consulta: consultaNombreApellidos,
+              Trámite: tramiteEtiqueta,
+              'Onboarding digital': 'Incompleto - No carga de documentos',
+              'Ofertas personalizadas': 'Ofrecer apoyo para la contratación de su seguro de vida',
+              'Datos de usuario': '<table><tr><td>Nombre: Barlaam Eduardo</td></tr><tr><td>Apellidos: Corona Becerra</td></tr><tr><td>CURP: No registrado</td></tr><tr><td>Edad: 30</td></tr><tr><td>Sexo: H</td></tr><tr><td>Nivel de riesgo: Falta información para calculo</td></tr><tr><td>Ubicación: No registrado</td></tr><tr><td>Enfermedades: No registrado</td></tr></table>',
+              Documentación: '<a No cargado</a>'
+            }
+          ];
+        } else {
+          datos.extraFields = [
+            {
+              showable: [{ in: 'workstation', format: 'both' }],
+              Consulta: consultaNombreApellidos,
+              Trámite: tramiteEtiqueta,
+              'Onboarding digital': 'Terminado',
+              'Ofertas personalizadas': 'Ofrecer seguro de auto con cobertura amplia por ser un cliente preferencial',
+              'Datos de usuario': '<table><tr><td>Nombre: Barlaam Eduardo</td></tr><tr><td>Apellidos: Corona Becerra</td></tr><tr><td>CURP: COBB950601HDFRCR03</td></tr><tr><td>Edad: 30</td></tr><tr><td>Sexo: H</td></tr><tr><td>Nivel de riesgo: Medio</td></tr><tr><td>Ubicación: Ciudad de México</td></tr><tr><td>Enfermedades: No</td></tr></table>',
+              Documentación: '<a href=\'https://drive.google.com/file/d/1SAbrxj3WmJX7FCUhn2ZTVe0zRHoPvt8K/view?usp=drive_link\' target=\'_blank\' rel=\'noopener noreferrer\'>Ver Comprobante de Domicilio</a>'
+            }
+          ];
+        }
         datos.customerExtraFields = [
           {
             showable: [{ in: 'workstation', format: 'both' }]
